@@ -41,7 +41,7 @@ This project focuses on developing a backend for the inventory management system
     - Users can create, read, and delete their own orders.
     - Orders have a unique order ID, user ID, product ID, quantity, and order status.
     - Orders can be associated with a specific product and user.
-    - Orders can be in one of the following statuses: PENDING, PROCESSING, SHIPPED, DELIVERED.
+    - Orders can be in one of the following statuses: PENDING, SHIPPED, DELIVERED.
     - Orders will automatically deduct the product quantity from the inventory when created.
     - Orders can be updated to change the order status.
 
