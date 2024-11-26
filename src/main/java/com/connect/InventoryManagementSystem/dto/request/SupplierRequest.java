@@ -22,6 +22,5 @@ public class SupplierRequest {
     @NotBlank(message = "Supplier Email is required")
     private String email;
 
-    @NotBlank(message = "Status is required")
     private SupplierStatus status;
 }

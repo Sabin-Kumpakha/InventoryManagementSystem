@@ -106,7 +106,7 @@ public class SupplierController {
     }
 
     @PreAuthorize("hasAnyAuthority('ADMIN'")
-    @PostMapping("/delete/{supplierId}")
+    @DeleteMapping("/delete/{supplierId}")
     public ResponseEntity<Map<String, Object>> deleteSupplier(@PathVariable Long supplierId) {
         Map<String, Object> response = new HashMap<>();
         try {

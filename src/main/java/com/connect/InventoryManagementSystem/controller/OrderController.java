@@ -21,7 +21,7 @@ public class OrderController {
     private final OrderService orderService;
 
     @PreAuthorize("hasAnyAuthority('ADMIN', 'USER')")
-    @GetMapping("")
+    @GetMapping("/")
     public ResponseEntity<Map<String, Object>> getAllOrders() {
         Map<String, Object> response = new HashMap<>();
         try {

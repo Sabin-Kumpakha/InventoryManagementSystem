@@ -14,10 +14,12 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
@@ -30,6 +32,7 @@ public class ProductServiceImpl implements ProductService{
     private final ProductRepository productRepository;
     private final SupplierService supplierService;
     private final SupplierRepository supplierRepository;
+
 
     @Override
     public ProductResponse getProductById(Long productId) {
@@ -46,14 +49,22 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
-    public ProductResponse createProduct( @Valid ProductRequest request) {
-        //if supplier doesn't exist throw exception
-        if (!supplierService.existsById(request.getSupplier().getSupplierId())) {
-            throw new NotFoundException("Product failed to save. Supplier doesn't exist.");
-        }
-        Product product = productRepository.save(convertToProduct(request));
+    public ProductResponse createProduct(@Valid ProductRequest request) {
+        Supplier supplier = supplierRepository.findById(request.getSupplierId())
+                .orElseThrow(() -> new NotFoundException("Product failed to save. Supplier doesn't exist."));
+
+        Product product = Product.builder()
+                .productName(request.getProductName())
+                .description(request.getDescription())
+                .price(request.getPrice())
+                .quantity(request.getQuantity())
+                .supplier(supplier)
+                .build();
+
+        product = productRepository.save(product);
         return productResponseBuilder(product);
     }
+
 
     @Override
     public ProductResponse updateProduct(Long productId, @Valid ProductRequest request) {
@@ -81,8 +92,10 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
-    public int importProductsFromCsv(MultipartFile file) {
-        try(CSVReader reader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
+    public int importProductsFromCsv(MultipartFile file){
+        CSVReader reader = null;
+        try {
+            reader = new CSVReader(new InputStreamReader(file.getInputStream()));
             String[] nextLine;
             reader.readNext();
             int count = 0;
@@ -106,6 +119,14 @@ public class ProductServiceImpl implements ProductService{
             return count;
         } catch (Exception e) {
             throw new CSVException("Failed to import products from csv file" + e.getMessage());
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    throw new CSVException("Failed to close csv reader" + e.getMessage());
+                }
+            }
         }
     }
 
@@ -148,12 +169,14 @@ public class ProductServiceImpl implements ProductService{
     }
 
     private Product convertToProduct(@Valid ProductRequest request) {
+        Supplier supplier = supplierRepository.findById(request.getSupplierId())
+                .orElseThrow(() -> new NotFoundException("Supplier not found with id: " + request.getSupplierId()));
         return Product.builder()
                 .productName(request.getProductName())
                 .description(request.getDescription())
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
-                .supplier(request.getSupplier())
+                .supplier(supplier)
                 .build();
     }
 }

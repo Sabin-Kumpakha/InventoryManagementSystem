@@ -14,12 +14,13 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -111,13 +112,12 @@ public class OrderServiceImpl implements OrderService {
         orderRepository.deleteById(orderId);
     }
 
-    @Override
     public int importOrdersFromCsv(MultipartFile file) {
         Map<Long, Order> orderMap = new HashMap<>();
 
         try (CSVReader reader = new CSVReader(new InputStreamReader(file.getInputStream()))) {
             String[] nextLine;
-            reader.readNext();
+            reader.readNext(); // Skip header
             int count = 0;
 
             while ((nextLine = reader.readNext()) != null) {
@@ -142,7 +142,7 @@ public class OrderServiceImpl implements OrderService {
                 Product product = productRepository.findById(productId)
                         .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
 
-                // check for product quantity and update it
+                // Check for product quantity and update it
                 if (product.getQuantity() < quantity) {
                     throw new NotFoundException("Product " + product.getProductName() + " is out of stock");
                 }
@@ -159,10 +159,10 @@ public class OrderServiceImpl implements OrderService {
             orderRepository.saveAll(orderMap.values());
             return count;
         } catch (Exception e) {
-            throw new NotFoundException("Failed to import orders from CSV file" + e.getMessage());
+            throw new NotFoundException("Failed to import orders from CSV file: " + e.getMessage());
         }
-
     }
+
 
     @Override
     public byte[] exportToCsv() {
